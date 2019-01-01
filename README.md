@@ -11,4 +11,9 @@ Within each module, there are several files:
 * setup.sh contains idempotent scripts to setup a new machine
 * dots/ contains files that can be linked from home dir .foo files, such as
   .bash\_aliases, .vimrc, etc...
+* dot\_includes confains files that should be included in specific home dir
+  files, specifially:
+  * .bash\_aliases
+  * .tmux.conf
+  * .vimrc
 * bin/ contains executable scripts for each module
