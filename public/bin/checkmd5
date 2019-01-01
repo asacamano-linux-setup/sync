@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if which md5; then
+  echo "GOOD($2) = $1"
+  md5 $2
+else
+  echo "$1  $2 is expected. Actual was:"
+  md5sum $2
+fi

@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Configure bash to be unsurprising: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+
+if [[ ${1:-""} == "-i" ]]; then
+  interactive=true
+  shift;
+else
+  interactive=""
+fi
+
+# Get a name based on the directory
+name=${PWD##*/}
+echo Rebuilding and running $name
+
+# Get args from the Dockerfile
+docker_args=$( grep '^\s*#\s*DOCKER_ARGS\s*=' Dockerfile | sed -e 's/[^=]*=//' ) || docker_args=""
+echo "  " with extra Docker args $docker_args
+
+# Stop existing
+running=$( docker ps -f name=$name | awk '{print $1}' | tail -n +2 )
+if [[ $running != "" ]]; then
+  echo Stopping running server
+  docker stop $running
+fi
+
+# Remove old image
+image=$( docker ps -a -f name=$name | awk '{print $1}' | tail -n +2 )
+if [[ $image != "" ]]; then
+  echo Removing image
+  docker rm $image
+fi
+
+echo docker build -t gci-dev-$name .
+docker build -t gci-dev-$name . 
+
+if [[ $interactive != "" ]]; then
+  echo docker run --name $name -d ${docker_args} gci-dev-$name
+  docker run --name $name -i -t ${docker_args} gci-dev-$name
+else
+  echo docker run --name $name -d ${docker_args} gci-dev-$name
+  docker run --name $name -d ${docker_args} gci-dev-$name
+fi

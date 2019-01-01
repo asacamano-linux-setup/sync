@@ -1,0 +1,13 @@
+#!/bin/sh
+
+
+#!/bin/bash
+
+IMAGE_NAME=${PWD##*/}
+echo docker build -t 438258204156.dkr.ecr.us-east-1.amazonaws.com/${IMAGE_NAME}:latest .
+docker build -t 438258204156.dkr.ecr.us-east-1.amazonaws.com/${IMAGE_NAME}:latest .
+docker tag 438258204156.dkr.ecr.us-east-1.amazonaws.com/${IMAGE_NAME}:latest dkr.reddognetworks.com/${IMAGE_NAME}:latest .
+docker push 438258204156.dkr.ecr.us-east-1.amazonaws.com/${IMAGE_NAME}:latest
+
+
+

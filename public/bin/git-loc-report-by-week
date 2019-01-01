@@ -1,0 +1,13 @@
+#!/bin/bash
+
+i=0
+while [[ $i -lt 52 ]]; do
+  i=$(( i + 1 ))
+  week_start_offset=$(( (i * 7) -1 ));
+  week_end_offset=$(( (i-1) * 7));
+  week_start_date=$( date -v-${week_start_offset}d +%Y-%m-%d )
+  week_end_date=$( date -v-${week_end_offset}d +%Y-%m-%d )
+  echo
+  echo $week_start_date $week_end_date
+  git-loc-report $week_start_date $week_end_date
+done

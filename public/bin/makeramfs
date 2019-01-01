@@ -1,0 +1,46 @@
+#!/bin/bash
+# See http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
+
+function usage {
+  echo "Usage: makeramfs <dir> <size>"
+  echo "Example:"
+  echo "makeramfs /mnt/ram 200m"
+}
+
+dir=${1:-""}
+size=${2:-""}
+
+if [[ $dir == "" ]]; then
+  usage
+  exit 1
+fi
+if [[ $size == "" ]]; then
+  usage
+  exit 2
+fi
+
+if [[ -d $dir && $(find $dir -type d -empty ) != $dir ]]; then
+  echo $dir is not empty. Can not proceed.
+  exit 3
+fi
+
+echo
+echo Making ramfs at $dir
+sudo mkdir -p $dir
+
+echo
+echo Mounting filesystem mount -t ramfs -o size=$size ramfs $dir
+mount -t ramfs -o size=$size ramfs $dir
+
+echo
+echo Chownging to user:
+echo   chown "${SUDO_USER}:root" $dir
+echo   chmod 700  $dir
+chown "${SUDO_USER}:${USER}" $dir
+chmod 700  $dir
+
+echo
+echo Results:
+ls -ld $dir

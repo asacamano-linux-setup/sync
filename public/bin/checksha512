@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "SHA512($2)= $1"
+openssl sha -sha512 $2

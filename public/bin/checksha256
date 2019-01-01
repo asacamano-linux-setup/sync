@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "SHA256($2)= $1"
+openssl sha -sha256 $2

@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "GOOD($2)= $1"
+openssl sha1 $2

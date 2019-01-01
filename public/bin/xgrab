@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# See http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
+
+function usage {
+  echo "Usage: xgrab <job>"
+  echo ""
+  echo "This will either launch the given job using xpra, or attach to an existing"
+  echo "copy of that job is there is one."
+  echo ""
+  echo "Jobs are defined in ~/.xgrab using the following format"
+  echo ""
+  echo "* Lines starting with '#' are ignored."
+  echo "* Valid lines have the format <jobname> <display> : <command>"
+  echo ""
+  echo "For example "
+  echo ""
+  echo "eclipse 100 : /usr/bin/eclipse46"
+  echo "term    101 : /usr/bin/terminator"
+  echo ""
+  echo "Note that the display numbers must be unique - that is actually how the job is identified"
+}
+
+function readJob {
+  job_name=$1
+  if ! [[ -f ~/.xgrab ]]; then
+    echo "No jobs defined : ~/.xgrab is empty"
+    exit 2
+  fi
+  job_line=$(grep -v '^#' ~/.xgrab | grep '^'$job_name'\s' ) || job_line=""
+  if [[ $job_line == "" ]]; then
+    echo "$job_name is not defined in ~/.xgrab"
+    exit 3
+  fi
+
+  job_display=$( echo $job_line | awk '{print $2}' ) || job_display=""
+  job_command=$( echo $job_line | sed -e 's/^.*:\s*//') ||  job_command=""
+
+  # Bash RE seems to not work as expected - using grep
+  test_job_display=$( echo $job_display | grep '^[0-9][0-9]*$') || test_job_display=""
+  if [[ $test_job_display == "" ]]; then
+    echo "$job_name needs a numeric display defined in ~/.xgrab, but it has '$job_display'"
+    exit 4
+  fi
+  if ! [[ -x $job_command ]]; then
+    echo "$job_name needis an executable binary defined in ~/.xgrab, but it has '$job_command'"
+    exit 5
+  fi
+}
+
+function isRunningSession {
+  xpra list | grep 'LIVE session at :'$job_display'$' 2>&1 > /dev/null
+}
+
+if [[ ${1:-""} == "" ]]; then
+  usage;
+  exit 1;
+fi
+
+readJob $1
+if isRunningSession; then
+  echo Attaching to running $job_command
+  xpra attach :$job_display &
+  echo Output sent to syslog xpra-$job_name
+else 
+  echo Starting new $job_command
+  xpra start :$job_display --exit-with-children --start-child=$job_command
+  xpra attach :$job_display &
+  echo Output sent to syslog xpra-$job_name
+  echo
+fi

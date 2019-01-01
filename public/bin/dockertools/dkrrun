@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# Run in bash strict mode: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
+
+# Find the directory containing the scripts: see http://stackoverflow.com/questions/59895
+SCRIPT_SOURCE="${BASH_SOURCE[0]}"
+ # resolve $SCRIPT_SOURCE until the file is no longer a symlink
+while [ -h "${SCRIPT_SOURCE}" ]; do
+  SCRIPT_DIR="$( cd -P "$( dirname "${SCRIPT_SOURCE}" )" && pwd )"
+  SCRIPT_SOURCE="$(readlink "${SCRIPT_SOURCE}")"
+  # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+  [[ $SCRIPT_SOURCE != /* ]] && SCRIPT_SOURCE="${SCRIPT_DIR}/${SCRIPT_SOURCE}"
+done
+SCRIPT_DIR="$( cd -P "$( dirname "${SCRIPT_SOURCE}" )" && pwd )"
+
+# Include the common functions
+. ${SCRIPT_DIR}/common.sh
+
+# Look to see if its running
+RUNNING=$( docker ps | grep dkrsh-${DKRTOOL_IMAGE_NAME} ) || RUNNING=""
+if [[ ${RUNNING} != "" ]]; then
+  echo "Already running"
+  exit
+fi
+
+# Interactive or background
+DKRTOOL_RUN_ARGS="--rm${TAB}-it"
+if [[ ${1:-""} == "-d" ]]; then
+  DKRTOOL_RUN_ARGS="-d"
+  shift
+fi
+
+# Look to see if it's been run before and is now stopped
+STOPPED=$( docker ps -a | grep dkrsh-${DKRTOOL_IMAGE_NAME} ) || STOPPED=""
+if [[ ${STOPPED} != "" ]]; then
+  echo docker start ${DKRTOOL_RUN_ARGS} dkrsh-${DKRTOOL_IMAGE_NAME} $*
+  exec docker start ${DKRTOOL_RUN_ARGS} dkrsh-${DKRTOOL_IMAGE_NAME} $*
+fi
+
+echo docker run \
+  ${DKRTOOL_RUN_ARGS} \
+  --name dkrsh-${DKRTOOL_IMAGE_NAME} \
+  ${DKRTOOL_REPO_BASE}/${DKRTOOL_IMAGE_NAME}:latest $*
+if [[ ${DKRTOOL_RUN_ARGS} == "-d" ]]; then
+  echo docker logs -f dkrsh-${DKRTOOL_IMAGE_NAME}
+fi
+
+docker run \
+  ${DKRTOOL_RUN_ARGS} \
+  --name dkrsh-${DKRTOOL_IMAGE_NAME} \
+  ${DKRTOOL_REPO_BASE}/${DKRTOOL_IMAGE_NAME}:latest $*
+if [[ ${DKRTOOL_RUN_ARGS} == "-d" ]]; then
+  docker logs -f dkrsh-${DKRTOOL_IMAGE_NAME}
+fi
+

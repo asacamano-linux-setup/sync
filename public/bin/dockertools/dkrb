@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Run in bash strict mode: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
+
+# Find the directory containing the scripts: see http://stackoverflow.com/questions/59895
+SCRIPT_SOURCE="${BASH_SOURCE[0]}"
+ # resolve $SCRIPT_SOURCE until the file is no longer a symlink
+while [ -h "${SCRIPT_SOURCE}" ]; do
+  SCRIPT_DIR="$( cd -P "$( dirname "${SCRIPT_SOURCE}" )" && pwd )"
+  SCRIPT_SOURCE="$(readlink "${SCRIPT_SOURCE}")"
+  # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+  [[ $SCRIPT_SOURCE != /* ]] && SCRIPT_SOURCE="${SCRIPT_DIR}/${SCRIPT_SOURCE}"
+done
+SCRIPT_DIR="$( cd -P "$( dirname "${SCRIPT_SOURCE}" )" && pwd )"
+
+# Include the common functions
+. ${SCRIPT_DIR}/common.sh
+
+# Build the image
+echo ""
+echo docker build -t ${DKRTOOL_REPO_BASE}/${DKRTOOL_IMAGE_NAME}:latest .
+echo ""
+docker build -t ${DKRTOOL_REPO_BASE}/${DKRTOOL_IMAGE_NAME}:latest .
+
+

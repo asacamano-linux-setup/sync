@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Configure bash to be unsurprising: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
+
+# Get a name based on the directory
+name=${PWD##*/}
+
+# Login to the image
+docker exec -i -t $name bash
+

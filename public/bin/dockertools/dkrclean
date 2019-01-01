@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Removes unused docker images and also wipes wolumes if requested
+
+VOLS=""
+if [[ $1 == "-v" ]]; then
+  VOLS="wipe volumes"
+fi
+
+echo Removeing untagged images
+docker rmi $( docker images | grep '^<none>' | awk '{print $3}' )
+
+if [[ $VOLS != "" ]]; then
+  echo Removing volumes
+  docker volume ls | tail -n +2 | awk '{print $2}' | xargs docker volume rm
+fi

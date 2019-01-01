@@ -1,0 +1,14 @@
+#!/bin/bash
+
+START_DATE=${1:-`date -v-1d +"%Y-%m-%d"`}
+END_DATE=${2:-`date +"%Y-%m-%d"`}
+
+git log --pretty='%an' --since=${START_DATE} --until=${END_DATE} | awk '{print ("\""$0"\"")}' \
+  | sort | uniq -c | sed -e 's/^  *//' | sed -e 's/ /,/' \
+  | awk '{print "Commits,'${START_DATE}','${END_DATE}',"$0}'
+
+git log --pretty='%an' --since=${START_DATE} --until=${END_DATE} | sort -u | while read AUTHOR; do
+  echo Lines,${START_DATE},${END_DATE},'"'$AUTHOR'"', \
+  `git log --numstat --pretty="%H" --author="${AUTHOR}" --since=${START_DATE} --until=${END_DATE} \
+  | awk 'NF==3 {plus+=$1; minus+=$2} END {printf("+%d, -%d\n", plus, minus)}'`
+done

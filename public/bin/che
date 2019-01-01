@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# See options in https://eclipse-che.readme.io/docs/configuration
+# Supported commands are (https://eclipse-che.readme.io/docs/usage-docker#usage)
+# start
+# stop
+# restart
+# update
+# info
+
+# Setting -e CHE_DATA_FOLDER=${HOME}/dev/che didn't work smoothly
+# see https://github.com/eclipse/che/pull/1733
+
+docker run --rm  \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v che:/home/user/dev/che \
+  -e CHE_HOST_IP=192.168.1.11 \
+  eclipse/che $*
+  
+  
