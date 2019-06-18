@@ -17,3 +17,11 @@ Within each module, there are several files:
   * .tmux.conf
   * .vimrc
 * bin/ contains executable scripts for each module
+
+## Adding submodules
+
+To add a new directory, e.g. for project specific setup, run
+
+```sh
+git submodule add <git url> <directory>
+```
