@@ -1,10 +1,14 @@
 #!/bin/bash
 
-# Set up the dot_include files
 
 other_modules=$( ls -d */ | sed -e 's/\/$//' | grep -v 'public' )
 
-# .bash_alises
+#
+# Set up the dot_include files, build building files that include elements
+# from all modules.
+#
+
+# Build .bash_alises
 outfile=~/.bash_aliases
 rm -f ${outfile}
 for module in public ${other_modules}; do
@@ -15,8 +19,10 @@ for module in public ${other_modules}; do
     echo ". ${file}" >> $outfile
   fi
 done
+# Source the new aliases
+. ~/.bash_aliases
 
-# .vimrc
+# Build .vimrc
 outfile=~/.vimrc
 rm -f ${outfile}
 for module in public ${other_modules}; do
@@ -28,7 +34,7 @@ for module in public ${other_modules}; do
   fi
 done
 
-# .vimrc
+# Build .conf
 outfile=~/.tmux.conf
 rm -f ${outfile}
 for module in public ${other_modules}; do
@@ -39,3 +45,18 @@ for module in public ${other_modules}; do
     echo "source ${file}" >> $outfile
   fi
 done
+
+#
+# Now that all the .rc files are setup, run the setup.sh files
+#
+
+# Run all setup.sh files
+for module in public ${other_modules}; do
+  file="${module}/setup.sh"
+  if [[ -f "${file}" ]]; then
+    echo "==============================================================="
+    echo "Running ${file}"
+    $file
+  fi
+done
+

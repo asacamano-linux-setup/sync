@@ -4,19 +4,21 @@
 
 ## Linking to dot-files
 echo "Checking dot file symlink"
-for file in ~/Sync/public/dots/* ; do
-  if [[ ! "${file}" =~ (\.old|\.tmp|\.swp|\.bak)$ ]]; then
-    base=$(basename "${file}");
-    if [[ -L .${base} ]]; then
-      echo "  .${base} exists"
-    elif [[ -f  ~/".${base}" ]]; then
-      echo "  WARNING: .${base} is not linked"
-    else
-      echo "  Making symlink ln -s $file ~/.${base}"
-      ln -s "$file" ~/."${base}"
+if ls ~/Sync/public/dots/* > /dev/null 2>&1 ; then
+  for file in ~/Sync/public/dots/* ; do
+    if [[ ! "${file}" =~ (\.old|\.tmp|\.swp|\.bak)$ ]]; then
+      base=$(basename "${file}");
+      if [[ -L .${base} ]]; then
+        echo "  .${base} exists"
+      elif [[ -f  ~/".${base}" ]]; then
+        echo "  WARNING: .${base} is not linked"
+      else
+        echo "  Making symlink ln -s $file ~/.${base}"
+        ln -s "$file" ~/."${base}"
+      fi
     fi
-  fi
-done
+  done
+fi
 
 ## Tmux
 if ( apt list --installed 2>&1 | grep "^tmux/" > /dev/null ); then
