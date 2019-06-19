@@ -2,24 +2,6 @@
 
 ## In generall, all of these should be idempotent
 
-## Linking to dot-files
-echo "Checking dot file symlink"
-if ls ~/Sync/public/dots/* > /dev/null 2>&1 ; then
-  for file in ~/Sync/public/dots/* ; do
-    if [[ ! "${file}" =~ (\.old|\.tmp|\.swp|\.bak)$ ]]; then
-      base=$(basename "${file}");
-      if [[ -L .${base} ]]; then
-        echo "  .${base} exists"
-      elif [[ -f  ~/".${base}" ]]; then
-        echo "  WARNING: .${base} is not linked"
-      else
-        echo "  Making symlink ln -s $file ~/.${base}"
-        ln -s "$file" ~/."${base}"
-      fi
-    fi
-  done
-fi
-
 ## Tmux
 if ( apt list --installed 2>&1 | grep "^tmux/" > /dev/null ); then
   echo tmux already installed
@@ -38,7 +20,6 @@ else
   ## Install / updatetmux plugins
   ~/.tmux/plugins/tpm/bin/install_plugins
 fi
-
 
 ## Silver Searcher (ag)
 if ( apt list --installed 2>&1 | grep "^silversearcher-ag/" > /dev/null ); then
