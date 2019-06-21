@@ -2,6 +2,11 @@
 
 ## In generall, all of these should be idempotent
 
+## Gnome terminal setup
+if [[ "${DISPLAY}" != "" ]]; then
+  dconf load /org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/ < gnome-terminal-profile
+fi
+
 ## Tmux
 if ( apt list --installed 2>&1 | grep "^tmux/" > /dev/null ); then
   echo tmux already installed

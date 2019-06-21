@@ -94,7 +94,9 @@ for module in public ${other_modules}; do
   if [[ -f "${file}" ]]; then
     echo "==============================================================="
     echo "Running ${file}"
+    pushd "${module}"
     $file
+    popd
   fi
 done
 
