@@ -95,7 +95,7 @@ for module in public ${other_modules}; do
     echo "==============================================================="
     echo "Running ${file}"
     pushd "${module}"
-    $file
+    ./setup.sh
     popd
   fi
 done
