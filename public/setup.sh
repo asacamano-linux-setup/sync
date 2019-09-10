@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Bash strict mode
+set -euo pipefail
+IFS=$'\n\t'
+
 ## In generall, all of these should be idempotent
 
 ## Gnome terminal setup
