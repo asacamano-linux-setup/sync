@@ -70,6 +70,7 @@ symlink "dots" "${HOME}/."
 
 # Set up all bin files
 echo "Checking bin file symlink"
+mkdir -p ~/bin
 symlink "bin" "${HOME}/bin/"
 
 # Set up all cron files
