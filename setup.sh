@@ -5,21 +5,16 @@ set -euo pipefail
 IFS=$'\n\t'
 
 #
-# Common function to symlink files
+# Common functions
 #
 
-symlink() {
+# Check for duplicates
+dupcheck() {
   local SRC_DIR=$1
   if [[ "${SRC_DIR}" == "" ]]; then
-    echo "Bad call to simlink() - missing first arg SRC_DIR."
+    echo "Bad call to dupcheck() - missing first arg SRC_DIR."
     exit 1
   fi
-  local DEST_PATH=$2
-  if [[ "${DEST_PATH}" == "" ]]; then
-    echo "Bad call to simlink() - missing second arg DEST_PATH."
-    exit 1
-  fi
-  # Check for duplicates
   local FILES="";
   for module in public ${other_modules}; do
     if ls ~/Sync/${module}/${SRC_DIR}/* > /dev/null 2>&1 ; then
@@ -36,13 +31,27 @@ symlink() {
     echo "Note that duplicate dot files can sometimes be handed as dot_includes files."
     exit 1
   fi
+}
 
+# Symlink to files in a module
+symlink() {
+  local SRC_DIR=$1
+  if [[ "${SRC_DIR}" == "" ]]; then
+    echo "Bad call to simlink() - missing first arg SRC_DIR."
+    exit 1
+  fi
+  local DEST_PATH=$2
+  if [[ "${DEST_PATH}" == "" ]]; then
+    echo "Bad call to simlink() - missing second arg DEST_PATH."
+    exit 1
+  fi
+  dupcheck "${SRC_DIR}"
   for module in public ${other_modules}; do
     if ls ~/Sync/${module}/${SRC_DIR}/* > /dev/null 2>&1 ; then
       for file in ~/Sync/${module}/${SRC_DIR}/* ; do
         if [[ ! "${file}" =~ (\.old|\.tmp|\.swp|\.bak|\*)$ ]]; then
-          base=$(basename "${file}");
-          dest="${DEST_PATH}${base}"
+          local base=$(basename "${file}");
+          local dest="${DEST_PATH}${base}"
           if [[ -L "${dest}" ]]; then
             echo "  ${dest} is linked correctly"
           elif [[ -f  "${dest}" ]]; then
@@ -55,6 +64,54 @@ symlink() {
       done
     fi
   done
+}
+
+# Copy cronfiles
+copycron() {
+  local SRC_DIR=$1
+  if [[ "${SRC_DIR}" == "" ]]; then
+    echo "Bad call to cropcron() - missing first arg SRC_DIR."
+    exit 1
+  fi
+  local DEST_PATH="/etc/cron.d/"
+  local reload=no
+  dupcheck "${SRC_DIR}"
+  for module in public ${other_modules}; do
+    if ls ~/Sync/${module}/${SRC_DIR}/* > /dev/null 2>&1 ; then
+      for file in ~/Sync/${module}/${SRC_DIR}/* ; do
+        if [[ ! "${file}" =~ (\.old|\.tmp|\.swp|\.bak|\*)$ ]]; then
+          local base=$(basename "${file}");
+          local dest="${DEST_PATH}${base}"
+          local updated=no
+          if [[ -f "${dest}" ]]; then
+            local file_sum=$( sha256sum "${file}" | awk '{print $1}' )
+            local dest_sum=$( sha256sum "${dest}" | awk '{print $1}' )
+            if [[ "${file_sum}" == "${dest_sum}" ]]; then
+              echo "  ${dest} exists and is up to date"
+            else
+              echo "  sudo cp ${file} ${dest}"
+              sudo cp "${file}" "${dest}"
+              updated=yes
+            fi
+          else
+            echo "  sudo cp ${file} ${dest}"
+            sudo cp "${file}" "${dest}"
+            updated=yes
+          fi
+
+          if [[ "${updated}" == "yes" ]]; then
+            echo "Updating attributes and reloading cron."
+            sudo chown root:root ${dest}
+            sudo chmod 644 ${dest}
+            reload=yes
+          fi
+        fi
+      done
+    fi
+  done
+  if [[ "${reload}" == "yes" ]]; then
+    sudo service cron reload
+  fi
 }
 
 
@@ -73,8 +130,8 @@ echo "Checking bin file symlink"
 symlink "bin" "${HOME}/bin/"
 
 # Set up all cron files
-echo "Checking cron file symlink"
-symlink "cron" "/etc/cron.d/"
+echo "Checking cron files copied and cron updated"
+copycron "cron"
 
 #
 # Set up the dot_include files, build building files that include elements
