@@ -119,7 +119,9 @@ copycron() {
 # Main code
 #
 
-other_modules=$( ls -d */ | sed -e 's/\/$//' | grep -v 'public' )
+echo A
+other_modules=$( ls -d */ | sed -e 's/\/$//' | ( grep -v 'public' || echo "" ) )
+echo B
 
 # Set up all dot files (which are not supported as mergable dot_include)
 echo "Checking dot files symlinks"
@@ -141,7 +143,9 @@ copycron "cron"
 
 # Build .bash_alises
 outfile=~/.bash_aliases
-rm -f ${outfile}
+if [[ -f "${outfile}" ]]; then
+  mv "${outfile}" "${outfile}.bak"
+fi
 for module in public ${other_modules}; do
   file="${module}/dot_includes/bash_aliases"
   if [[ -f "${file}" ]]; then
@@ -150,12 +154,15 @@ for module in public ${other_modules}; do
     echo ". ${file}" >> $outfile
   fi
 done
+echo "" >> ${outfile}
 # Source the new aliases
 . ~/.bash_aliases
 
 # Build .vimrc
 outfile=~/.vimrc
-rm -f ${outfile}
+if [[ -f "${outfile}" ]]; then
+  mv "${outfile}" "${outfile}.bak"
+fi
 for module in public ${other_modules}; do
   file="${module}/dot_includes/vimrc"
   if [[ -f "${file}" ]]; then
@@ -167,7 +174,9 @@ done
 
 # Build .conf
 outfile=~/.tmux.conf
-rm -f ${outfile}
+if [[ -f "${outfile}" ]]; then
+  mv "${outfile}" "${outfile}.bak"
+fi
 for module in public ${other_modules}; do
   file="${module}/dot_includes/tmux.conf"
   if [[ -f "${file}" ]]; then
