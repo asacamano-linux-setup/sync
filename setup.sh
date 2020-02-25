@@ -177,6 +177,19 @@ for module in public ${other_modules}; do
   fi
 done
 
+# Build .config/i3/config file
+outfile=~/.config/i3/config
+mkdir -p ~/.config/i3
+rm -f ${outfile}
+for module in public ${other_modules}; do
+  file="${module}/dot_includes/i3"
+  if [[ -f "${file}" ]]; then
+    file=$( realpath "${file}" )
+    echo "cat ${file} >> $outfile"
+    cat "${file}" >> $outfile
+  fi
+done
+
 #
 # Now that all the .rc files are setup, run the setup.sh files
 #

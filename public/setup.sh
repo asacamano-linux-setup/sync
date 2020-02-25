@@ -53,3 +53,19 @@ else
   echo Installing meld
   sudo apt update && sudo apt install meld
 fi
+
+## i3 tiling window manager
+if ( apt list --installed 2>&1 | grep "^i3/" > /dev/null ); then
+  echo i3 already installed
+else
+  echo Installing i3
+  sudo apt update && sudo apt install i3
+fi
+
+## rofi app launcher
+if ( apt list --installed 2>&1 | grep "^rofi/" > /dev/null ); then
+  echo rofi already installed
+else
+  echo Installing rofi
+  sudo apt update && sudo apt install rofi
+fi
