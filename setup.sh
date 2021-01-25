@@ -120,7 +120,7 @@ copycron() {
 #
 
 echo A
-other_modules=$( ls -d */ | sed -e 's/\/$//' | ( grep -v 'public' || echo "" ) )
+other_modules=$( ls -d */ | sed -e 's/\/$//' | ( grep -v '^public/' || echo "" ) | (grep -v '^tmp/' || echo "") )
 echo B
 
 # Set up all dot files (which are not supported as mergable dot_include)

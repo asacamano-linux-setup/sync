@@ -1,3 +1,0 @@
-[submodule "google"]
-	path = google
-	url = sso://user/atgs/sync-google
