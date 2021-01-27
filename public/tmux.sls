@@ -35,7 +35,7 @@ public_tmux_conf:
       - file: tmux_conf_general
 
 # Install / updatetmux plugins
-"{{ grains['target_home'] }}/.tmux/plugins/tpm/bin/install_plugins":
+"{{ grains['target_home'] }}/.tmux/plugins/tpm/bin/install_plugins && touch {{ grains['target_home'] }}/.tmux/tpm.installed":
   cmd.run:
     - runas:  {{ grains['target_user'] }}
     - creates: "{{ grains['target_home'] }}/.tmux/tpm.installed"

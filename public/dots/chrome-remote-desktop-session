@@ -1,2 +1,0 @@
-# To load ~/.Xresources while chromoting
-exec /etc/X11/Xsession /usr/bin/i3

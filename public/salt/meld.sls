@@ -1,3 +1,0 @@
-meld:
-  pkg:
-    - installed

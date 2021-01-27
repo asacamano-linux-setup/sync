@@ -28,6 +28,9 @@ backup_and_empty() {
   touch "${FILE}"
 }
 
+other_modules() {
+  ( cd ${SYNC_DIR}/modules; ls -d * ) 2>/dev/null || echo ""
+}
 
 # ----------------------------------------------------------------------------
 # Main
@@ -83,7 +86,11 @@ if [[ -z "${HAS_MINION_ALREADY}" || -n "${FORCE_NEW_CONFIG}" ]]; then
 
   echo "file_roots:" >> "${MINION_FILE}"
   echo "  base:" >> "${MINION_FILE}"
-  echo "    - ${SYNC_DIR}/public/salt" >> "${MINION_FILE}"
+  echo "    - ${SYNC_DIR}/public" >> "${MINION_FILE}"
+  # Other modules (i.e. for work, etc)
+  for MODULE in $( other_modules ); do
+    echo "    - ${SYNC_DIR}/modules/${MODULE}" >>"${MINION_FILE}"
+  done
 
   echo "" >> "${MINION_FILE}"
   echo "grains:" >> "${MINION_FILE}"
@@ -91,16 +98,20 @@ if [[ -z "${HAS_MINION_ALREADY}" || -n "${FORCE_NEW_CONFIG}" ]]; then
   echo "  target_user: \"${SUDO_USER}\"" >> "${MINION_FILE}"
   TARGET_HOME=$( eval echo "~${SUDO_USER}" )
   echo "  target_home: \"${TARGET_HOME}\"" >> "${MINION_FILE}"
-
-  echo "" >> "${MINION_FILE}"
-  echo "include:" >> "${MINION_FILE}"
+  echo "  modules:" >> "${MINION_FILE}"
   # Other modules (i.e. for work, etc)
-  OTHER_MODULES=$( cd ${SYNC_DIR}; ls -d */ | sed -e 's/\/$//' | ( grep -v '^public/' || echo "" ) | ( grep -v '^tmp/' || echo "" ) )
-  for MODULE in ${OTHER_MODULES}; do
-    if [[ -f "${MODULE}/minion" ]]; then
-      echo "  - ${SYNC_DIR}/${MODULE}/minion" >>"${MINION_FILE}"
-    fi
+  for MODULE in $( other_modules ); do
+    echo "    - ${MODULE}" >>"${MINION_FILE}"
   done
+
+#  echo "" >> "${MINION_FILE}"
+#  echo "include:" >> "${MINION_FILE}"
+#  # Other modules (i.e. for work, etc)
+#  for MODULE in $( other_modules ); do
+#    if [[ -f "${SYNC_DIR}/modules/${MODULE}/minion" ]]; then
+#      echo "  - ${SYNC_DIR}/modules/${MODULE}/minion" >>"${MINION_FILE}"
+#    fi
+#  done
 
 fi
 
