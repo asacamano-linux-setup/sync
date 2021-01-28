@@ -31,7 +31,7 @@ public_tmux_conf:
   file.accumulated:
     - name: tmux_includes
     - filename: "{{ grains['target_home'] }}/.tmux.conf"
-    - text: "# Placeholder for other modules i3 chnages"
+    - text: "# Placeholder for other modules tmux config"
     - require_in:
       - file: tmux_conf_general
 
