@@ -1,0 +1,10 @@
+set tabstop=2
+set shiftwidth=2
+set expandtab
+
+set number
+set autoindent
+
+" Include the various VIM configs for different environments.
+{% for include in accumulator['vimrc_includes']|sort %}{{ include }}
+{% endfor %}
