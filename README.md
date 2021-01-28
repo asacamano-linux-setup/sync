@@ -2,26 +2,22 @@
 
 This directory contains things I'd like to keep in sync across my workstations.
 
-Each directory is a "module" to allow public stuff to live in my github repo in
-a public module, and private stuff to live in private repos (like stuff for
-specifics jobs).
+It uses [Salt](http://saltstack.com) in a masterless mode.
 
-Within each module, there are several files:
+## Choosing or adding modues
 
-* setup.sh contains idempotent scripts to setup a new machine
-* dots/ contains files that can be linked from home dir .foo files, such as
-  .bash\_aliases, .vimrc, etc...
-* dot\_includes confains files that should be included in specific home dir
-  files, specifially:
-  * .bash\_aliases
-  * .tmux.conf
-  * .vimrc
-* bin/ contains executable scripts for each module
+It does basic setup, but can be extended by adding "modules" to the modules
+directory. Each module must contain a Salt actions file with the same name
+as the modue, e.g.
 
-## Adding submodules
+```
+modules/gui/gui.sls
+```
 
-To add a new directory, e.g. for project specific setup, run
+## Running the setup script
 
-```sh
-git submodule add <git url> <directory>
+Once the modules are installed, run 
+
+```
+sudo ./setup.sh
 ```
