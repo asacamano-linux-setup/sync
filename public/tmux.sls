@@ -26,11 +26,12 @@ tmux_conf_general:
     - mode: 644
     - template: jinja
 
+# How to include other files
 public_tmux_conf:
   file.accumulated:
     - name: tmux_includes
     - filename: "{{ grains['target_home'] }}/.tmux.conf"
-    - text: "source {{ grains['sync_dir'] }}/public/salt/tmux.partial.conf"
+    - text: "# Placeholder for other modules i3 chnages"
     - require_in:
       - file: tmux_conf_general
 
