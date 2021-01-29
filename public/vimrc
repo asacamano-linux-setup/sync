@@ -5,6 +5,12 @@ set expandtab
 set number
 set autoindent
 
+" Enable modern Vim features not compatible with Vi spec.
+set nocompatible
+
 " Include the various VIM configs for different environments.
 {% for include in accumulator['vimrc_includes']|sort %}{{ include }}
 {% endfor %}
+
+filetype plugin indent on
+syntax on
