@@ -1,0 +1,15 @@
+---
+- name: Install Silver Searcher
+  package:
+    name: silversearcher-ag
+    state: present
+
+- name: Install p7zip
+  package:
+    name: p7zip-full
+    state: present
+
+- name: Install wmctrl
+  package:
+    name: wmctrl
+    state: present

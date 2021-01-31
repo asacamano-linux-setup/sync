@@ -1,0 +1,14 @@
+---
+- name: Install git
+  package:
+    name: git
+    state: present
+
+- name: Set up .gitconfig file
+  template:
+    dest: "{{ target_home }}/.gitconfig"
+    src: gitconfig
+    owner:  "{{ target_user }}"
+    group:  "{{ target_user }}"
+    mode: 0440
+    backup: true

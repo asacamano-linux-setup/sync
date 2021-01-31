@@ -4,8 +4,8 @@
 
 # See also:
 # https://docs.docker.com/engine/userguide/networking/get-started-overlay/
-# 
-# and 
+#
+# and
 #
 # https://docs.docker.com/swarm/install-w-machine/
 
@@ -80,7 +80,7 @@ for node in 0 1 2 3; do
   build_or_start node-${node} --swarm \
   --swarm-discovery="consul://${consul_ip}:8500" \
   --engine-opt="cluster-store=consul://${consul_ip}:8500" \
-  --engine-opt="cluster-advertise=eth1:2376" 
+  --engine-opt="cluster-advertise=eth1:2376"
 done
 
 echo "Don't forget:"

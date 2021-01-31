@@ -16,5 +16,4 @@ docker run --rm  \
   -v che:/home/user/dev/che \
   -e CHE_HOST_IP=192.168.1.11 \
   eclipse/che $*
-  
-  
+

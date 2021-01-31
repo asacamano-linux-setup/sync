@@ -26,7 +26,7 @@ if [[ -f ${HOME}/.dkrtool && ${HOME_INCLUDED} == "false" ]]; then
   DKRTOOL_FILES="${HOME}/.dkrtool${NEWLINE}${DKRTOOL_FILES}"
 fi
 
-if [[ $DKRTOOL_FILES == "" ]]; then 
+if [[ $DKRTOOL_FILES == "" ]]; then
   echo "Could not find .dkrtool file in $PWD or any parent directories, so can't use Docker Tools."
   exit 1;
 fi

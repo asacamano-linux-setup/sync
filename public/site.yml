@@ -1,0 +1,14 @@
+---
+- hosts: localhost
+  become: yes
+  tasks:
+    - name: Basic setup
+      include_tasks: "{{ item }}"
+      loop:
+        - vim.yml
+        - bash_aliases.yml
+        - git.yml
+        # Tmux requires git
+        - tmux.yml
+        - bin.yml
+        - utils.yml

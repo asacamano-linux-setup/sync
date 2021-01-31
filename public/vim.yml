@@ -1,0 +1,14 @@
+---
+- name: Install VIM
+  package:
+    name: vim
+    state: present
+
+- name: vimrc general
+  template:
+    dest: "{{ target_home }}/.vimrc"
+    src: vimrc
+    owner:  "{{ target_user }}"
+    group:  "{{ target_user }}"
+    mode: 0440
+    backup: true

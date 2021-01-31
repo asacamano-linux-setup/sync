@@ -1,0 +1,34 @@
+---
+- name: Install tmux
+  package:
+    name: tmux
+    state: present
+
+- name: tmux.conf general
+  template:
+    dest: "{{ target_home }}/.tmux.conf"
+    src: tmux.conf
+    owner:  "{{ target_user }}"
+    group:  "{{ target_user }}"
+    mode: 0440
+    backup: true
+
+- name: Make .tmux plugins directory
+  file:
+    path: "{{ target_home }}/.tmux/plugins"
+    state: directory
+    owner:  "{{ target_user }}"
+    group:  "{{ target_user }}"
+    mode: 0750
+
+- name: Install tmux plugin manager
+  become_user: "{{ target_user }}"
+  shell: "git clone https://github.com/tmux-plugins/tpm {{ target_home }}/.tmux/plugins/tpm"
+  args:
+    creates: "{{ target_home }}/.tmux/plugins/tpm"
+
+- name: Initialize tmux plugin manager
+  become_user: "{{ target_user }}"
+  shell: "{{ target_home }}/.tmux/plugins/tpm/bin/install_plugins && touch {{ target_home }}/.tmux/tpm.installed"
+  args:
+    creates: "{{ target_home }}/.tmux/tpm.installed"

@@ -33,7 +33,7 @@ if [[ $image != "" ]]; then
 fi
 
 echo docker build -t gci-dev-$name .
-docker build -t gci-dev-$name . 
+docker build -t gci-dev-$name .
 
 if [[ $interactive != "" ]]; then
   echo docker run --name $name -d ${docker_args} gci-dev-$name

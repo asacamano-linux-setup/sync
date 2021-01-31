@@ -64,7 +64,7 @@ if isRunningSession; then
   echo Attaching to running $job_command
   xpra attach :$job_display &
   echo Output sent to syslog xpra-$job_name
-else 
+else
   echo Starting new $job_command
   xpra start :$job_display --exit-with-children --start-child=$job_command
   xpra attach :$job_display &

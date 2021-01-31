@@ -5,7 +5,7 @@
 # See also:
 #
 # https://docs.docker.com/engine/userguide/networking/get-started-overlay/
-# 
+#
 SWARM=mysql-shards
 
 function make_network() {

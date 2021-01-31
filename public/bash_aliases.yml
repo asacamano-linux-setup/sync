@@ -1,0 +1,5 @@
+---
+- name: Use VIM as the editor
+  lineinfile:
+    path: "{{ target_home }}/.bash_aliases"
+    line:  export EDITOR=vi

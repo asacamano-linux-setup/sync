@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# Set up salt on a new server following the instructions at
-# https://docs.saltproject.io/en/latest/topics/tutorials/quickstart.html#salt-masterless-quickstart
+# Set up Ansible and then my standard Linux set up on a new server
 
 # ----------------------------------------------------------------------------
 # Bash strict mode
@@ -16,7 +15,7 @@ backup_and_empty() {
   FILE=${1}
   if [[ -f ${FILE} ]]; then
     MAX=$( ( ls -1 "${FILE}.bak."* 2>/dev/null || echo "" ) | sed -e "s:${FILE}.bak.::" | grep -v '[^0-9]' | sort -n | tail -1)
-    if [[ -z "${MAX}" ]]; then 
+    if [[ -z "${MAX}" ]]; then
       MAX=0
     else
       MAX=$(($MAX + 1))
@@ -25,6 +24,7 @@ backup_and_empty() {
     mv "${FILE}" "${FILE}.bak.${MAX}"
   fi
   echo "Making new ${FILE}"
+  mkdir -p $(dirname "${FILE}")
   touch "${FILE}"
 }
 
@@ -54,7 +54,7 @@ while getopts "dcx" OPT; do
       FORCE_NEW_CONFIG="Y"
       ;;
     x)
-      DEBUG="-l debug"
+      DEBUG="-vvv"
       ;;
     *)
       echo "Use -d to force new downloads, or -c to force new config, or -x to debug."
@@ -67,55 +67,31 @@ done
 SYNC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # Install salt if requested
-SALT_CMD=$( which salt-call || echo "")
-if [[ -z "${SALT_CMD}" || -n "${FORCE_DOWNLOAD}" ]]; then
-  # No signature, but then this is running their software anyway...
-  mkdir -p "${SYNC_DIR}/tmp"
-  curl -L https://bootstrap.saltstack.com -o "${SYNC_DIR}/tmp/bootstrap_salt.sh"
-  sh "${SYNC_DIR}/tmp/bootstrap_salt.sh"
+ANSIBLE_CMD=$( which ansible || echo "")
+if [[ -z "${ANSIBLE_CMD}" || -n "${FORCE_DOWNLOAD}" ]]; then
+  apt-get install ansible
 fi
 
-# Set up a masterless minion
-MINION_FILE="/etc/salt/minion"
-HAS_MINION_ALREADY=$( grep "^file_client: local" "${MINION_FILE}" || echo "")
-if [[ -z "${HAS_MINION_ALREADY}" || -n "${FORCE_NEW_CONFIG}" ]]; then
-  backup_and_empty "${MINION_FILE}"
-
-  # Use a local file client
-  echo "file_client: local" > "${MINION_FILE}"
-
-  echo "file_roots:" >> "${MINION_FILE}"
-  echo "  base:" >> "${MINION_FILE}"
-  echo "    - ${SYNC_DIR}/public" >> "${MINION_FILE}"
-  # Other modules (i.e. for work, etc)
-  for MODULE in $( other_modules ); do
-    echo "    - ${SYNC_DIR}/modules/${MODULE}" >>"${MINION_FILE}"
-  done
-
-  echo "" >> "${MINION_FILE}"
-  echo "grains:" >> "${MINION_FILE}"
-  echo "  sync_dir: \"${SYNC_DIR}\"" >> "${MINION_FILE}"
-  echo "  target_user: \"${SUDO_USER}\"" >> "${MINION_FILE}"
+# Make config
+CONFIG_FILE="${SYNC_DIR}/.config.yml"
+if [[ ! -f "${CONFIG_FILE}" || -n "${FORCE_NEW_CONFIG}" ]]; then
+  backup_and_empty "${CONFIG_FILE}"
+  echo "---" >> "${CONFIG_FILE}"
+  echo "sync_dir: \"${SYNC_DIR}\"" >> "${CONFIG_FILE}"
+  echo "target_user: \"${SUDO_USER}\"" >> "${CONFIG_FILE}"
   TARGET_HOME=$( eval echo "~${SUDO_USER}" )
-  echo "  target_home: \"${TARGET_HOME}\"" >> "${MINION_FILE}"
-  echo "  modules:" >> "${MINION_FILE}"
-  # Other modules (i.e. for work, etc)
-  for MODULE in $( other_modules ); do
-    echo "    - ${MODULE}" >>"${MINION_FILE}"
+  echo "target_home: \"${TARGET_HOME}\"" >> "${CONFIG_FILE}"
+  echo "modules:" >> "${CONFIG_FILE}"
+  for module in $( other_modules ); do
+    echo "  - ${module}" >> "${CONFIG_FILE}"
   done
-
-#  echo "" >> "${MINION_FILE}"
-#  echo "include:" >> "${MINION_FILE}"
-#  # Other modules (i.e. for work, etc)
-#  for MODULE in $( other_modules ); do
-#    if [[ -f "${SYNC_DIR}/modules/${MODULE}/minion" ]]; then
-#      echo "  - ${SYNC_DIR}/modules/${MODULE}/minion" >>"${MINION_FILE}"
-#    fi
-#  done
-
 fi
+
+# Some Ansible options
+export ANSIBLE_RETRY_FILES_ENABLED=0
 
 # Run the setup
-echo "salt-call --local state.apply ${DEBUG}"
+OTHER_PLAYBOOKS=$( other_modules | awk '{print "modules/"$0"/"$0".yml"}' | sort)
+echo "ansible-playbook -c local -i localhost, --extra-vars @${CONFIG_FILE} ${DEBUG} ${OTHER_PLAYBOOKS} public/site.yml"
 IFS=" "
-salt-call --local state.apply ${DEBUG}
+ansible-playbook -c local -i localhost, --extra-vars @"${CONFIG_FILE}" ${DEBUG} ${OTHER_PLAYBOOKS} public/site.yml

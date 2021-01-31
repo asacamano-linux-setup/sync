@@ -9,8 +9,9 @@ set autoindent
 set nocompatible
 
 " Include the various VIM configs for different environments.
-{% for include in accumulator['vimrc_includes']|sort %}{{ include }}
-{% endfor %}
+{% if config_file_includes is mapping and 'vimrc' in config_file_includes %}{% for include in config_file_includes['vimrc']|sort %}
+{{ include }}{% endfor %}{% else %}
+" No other configs to include{% endif %}
 
 filetype plugin indent on
 syntax on
