@@ -1,0 +1,4 @@
+[extensions]
+hggit = {{ target_home }}/.hgext/hg-git/hggit
+hgext.convert=
+

@@ -1,0 +1,39 @@
+---
+- name: Install mercurial
+  package:
+    name: mercurial
+    state: present
+
+- name: Make .hgext directory
+  file:
+    path: "{{ target_home }}/.hgext"
+    state: directory
+    owner:  "{{ target_user }}"
+    group:  "{{ target_user }}"
+    mode: 0750
+
+- name: Install hg-git
+  become_user: "{{ target_user }}"
+  shell: "hg clone https://foss.heptapod.net/mercurial/hg-git {{ target_home }}/.hgext/hg-git"
+  args:
+    creates: "{{ target_home }}/.hgext/hg-git"
+
+- name: Install python2 pip
+  package:
+    name: python-pip
+    state: present
+
+- name: Install dulwich
+  become_user: "{{ target_user }}"
+  shell: "/usr/bin/python2 -m pip install dulwich && touch {{ target_home }}/.pip.installed.dulwich"
+  args:
+    creates: "{{ target_home }}/.pip.installed.dulwich"
+
+- name: .hgrc
+  template:
+    dest: "{{ target_home }}/.hgrc"
+    src: hgrc
+    owner:  "{{ target_user }}"
+    group:  "{{ target_user }}"
+    mode: 0440
+    backup: true
