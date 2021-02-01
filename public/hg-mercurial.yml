@@ -50,10 +50,16 @@
     creates: "{{ target_home }}/.pip.installed.dulwich"
 
 - name: .hgrc
-  template:
+  blockinfile:
     dest: "{{ target_home }}/.hgrc"
-    src: hgrc
+    create: true
     owner:  "{{ target_user }}"
     group:  "{{ target_group }}"
     mode: 0440
     backup: true
+    marker_begin: "Common elements being"
+    marker_end: "Common elements end"
+    block: |
+      [extensions]
+      hggit = {{ target_home }}/.hgext/hg-git/hggit
+      hgext.convert=

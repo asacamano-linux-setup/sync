@@ -5,10 +5,26 @@
     state: present
 
 - name: vimrc general
-  template:
+  blockinfile:
+    create: true
     dest: "{{ target_home }}/.vimrc"
-    src: vimrc
     owner:  "{{ target_user }}"
     group:  "{{ target_group }}"
     mode: 0440
     backup: true
+    marker_begin: Common vim.conf
+    marker_end: End common vim.conf
+    marker: '" {mark}'
+    block: |
+      set tabstop=2
+      set shiftwidth=2
+      set expandtab
+      
+      set number
+      set autoindent
+      
+      " Enable modern Vim features not compatible with Vi spec.
+      set nocompatible
+      
+      filetype plugin indent on
+      syntax on
