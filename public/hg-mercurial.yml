@@ -9,7 +9,7 @@
     path: "{{ target_home }}/.hgext"
     state: directory
     owner:  "{{ target_user }}"
-    group:  "{{ target_user }}"
+    group:  "{{ target_group }}"
     mode: 0750
 
 - name: Install hg-git
@@ -18,14 +18,34 @@
   args:
     creates: "{{ target_home }}/.hgext/hg-git"
 
+- name: Check python used by hg
+  shell: "head -1 /usr/bin/hg | grep python2"
+  register: hg_python_version
+  ignore_errors: yes
+
 - name: Install python2 pip
+  when: hg_python_version.rc == 0
   package:
     name: python-pip
     state: present
 
-- name: Install dulwich
+- name: Install dulwich python2
+  when: hg_python_version.rc == 0
   become_user: "{{ target_user }}"
   shell: "/usr/bin/python2 -m pip install dulwich && touch {{ target_home }}/.pip.installed.dulwich"
+  args:
+    creates: "{{ target_home }}/.pip.installed.dulwich"
+
+- name: Install python3 pip
+  when: hg_python_version.rc == 1
+  package:
+    name: python3-pip
+    state: present
+
+- name: Install dulwich python3
+  when: hg_python_version.rc == 1
+  become_user: "{{ target_user }}"
+  shell: "/usr/bin/python3 -m pip install dulwich && touch {{ target_home }}/.pip.installed.dulwich"
   args:
     creates: "{{ target_home }}/.pip.installed.dulwich"
 
@@ -34,6 +54,6 @@
     dest: "{{ target_home }}/.hgrc"
     src: hgrc
     owner:  "{{ target_user }}"
-    group:  "{{ target_user }}"
+    group:  "{{ target_group }}"
     mode: 0440
     backup: true

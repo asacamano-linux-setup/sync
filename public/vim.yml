@@ -9,6 +9,6 @@
     dest: "{{ target_home }}/.vimrc"
     src: vimrc
     owner:  "{{ target_user }}"
-    group:  "{{ target_user }}"
+    group:  "{{ target_group }}"
     mode: 0440
     backup: true

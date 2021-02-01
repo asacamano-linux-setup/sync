@@ -72,6 +72,17 @@ if [[ -z "${ANSIBLE_CMD}" || -n "${FORCE_DOWNLOAD}" ]]; then
   apt-get install ansible
 fi
 
+if [[ -f ${SYNC_DIR}/.secrets ]]; then
+  echo Reading secrets from ${SYNC_DIR}/.secrets
+else
+  echo "GIT_NAME=" >> ${SYNC_DIR}/.secrets
+  echo "GIT_EMAIL=" >> ${SYNC_DIR}/.secrets
+  echo "Adding secrets to ${SYNC_DIR}/.secrets. Press enter to edit."
+  read
+  vi "${SYNC_DIR}/.secrets"
+fi
+. ${SYNC_DIR}/.secrets
+
 # Make config
 CONFIG_FILE="${SYNC_DIR}/.config.yml"
 if [[ ! -f "${CONFIG_FILE}" || -n "${FORCE_NEW_CONFIG}" ]]; then
@@ -80,10 +91,12 @@ if [[ ! -f "${CONFIG_FILE}" || -n "${FORCE_NEW_CONFIG}" ]]; then
   echo "---" >> "${CONFIG_FILE}"
   echo "sync_dir: \"${SYNC_DIR}\"" >> "${CONFIG_FILE}"
   echo "target_user: \"${SUDO_USER}\"" >> "${CONFIG_FILE}"
+  TARGET_GROUP=$( id -g -n ${SUDO_USER} )
+  echo "target_group: \"${TARGET_GROUP}\"" >> "${CONFIG_FILE}"
   TARGET_HOME=$( eval echo "~${SUDO_USER}" )
   echo "target_home: \"${TARGET_HOME}\"" >> "${CONFIG_FILE}"
-  echo "target_git_name: \"${REQUIRED}\"" >> "${CONFIG_FILE}"
-  echo "target_git_email: \"${REQUIRED}\"" >> "${CONFIG_FILE}"
+  echo "target_git_name: \"${GIT_NAME:-$REQUIRED}\"" >> "${CONFIG_FILE}"
+  echo "target_git_email: \"${GIT_EMAIL:-$REQUIRED}\"" >> "${CONFIG_FILE}"
   echo "modules:" >> "${CONFIG_FILE}"
   for module in $( other_modules ); do
     echo "  - ${module}" >> "${CONFIG_FILE}"
@@ -91,7 +104,7 @@ if [[ ! -f "${CONFIG_FILE}" || -n "${FORCE_NEW_CONFIG}" ]]; then
   while grep "${REQUIRED}" "${CONFIG_FILE}" > /dev/null 2>&1; do
     echo "Confile file still has missing values - please replace all ${REQUIRED}:"
     echo ""
-    grep "${REQUIRED}" "${CONFIG_FILE}" 
+    grep "${REQUIRED}" "${CONFIG_FILE}"
     echo ""
     echo "Press enter to edit"
     read
@@ -103,7 +116,7 @@ fi
 export ANSIBLE_RETRY_FILES_ENABLED=0
 
 # Run the setup
-OTHER_PLAYBOOKS=$( other_modules | awk '{print "modules/"$0"/"$0".yml"}' | sort)
+OTHER_PLAYBOOKS=$( other_modules | awk '{printf "modules/%s/%s.yml ",$0,$0}' | sort)
 echo "ansible-playbook -c local -i localhost, --extra-vars @${CONFIG_FILE} ${DEBUG} ${OTHER_PLAYBOOKS} public/site.yml"
 IFS=" "
 ansible-playbook -c local -i localhost, --extra-vars @"${CONFIG_FILE}" ${DEBUG} ${OTHER_PLAYBOOKS} public/site.yml

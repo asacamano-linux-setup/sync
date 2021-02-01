@@ -2,3 +2,8 @@
 hggit = {{ target_home }}/.hgext/hg-git/hggit
 hgext.convert=
 
+# Include the various hgrc configs for different environments.
+{% if config_file_includes is mapping and 'hgrc' in config_file_includes %}{% for include in config_file_includes['hgrc']|sort %}
+{{ include }}{% endfor %}{% else %}
+# No other configs to include{% endif %}
+
