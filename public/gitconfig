@@ -1,5 +1,5 @@
 # This is Git's per-user configuration file.
 [user]
 # Please adapt and uncomment the following lines:
-name = Andrew Sacamano
-email = asacamano@gmail.com
+name = {{ target_git_name }}
+email = {{ target_git_email }}

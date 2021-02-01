@@ -76,14 +76,26 @@ fi
 CONFIG_FILE="${SYNC_DIR}/.config.yml"
 if [[ ! -f "${CONFIG_FILE}" || -n "${FORCE_NEW_CONFIG}" ]]; then
   backup_and_empty "${CONFIG_FILE}"
+  REQUIRED="MISSING"
   echo "---" >> "${CONFIG_FILE}"
   echo "sync_dir: \"${SYNC_DIR}\"" >> "${CONFIG_FILE}"
   echo "target_user: \"${SUDO_USER}\"" >> "${CONFIG_FILE}"
   TARGET_HOME=$( eval echo "~${SUDO_USER}" )
   echo "target_home: \"${TARGET_HOME}\"" >> "${CONFIG_FILE}"
+  echo "target_git_name: \"${REQUIRED}\"" >> "${CONFIG_FILE}"
+  echo "target_git_email: \"${REQUIRED}\"" >> "${CONFIG_FILE}"
   echo "modules:" >> "${CONFIG_FILE}"
   for module in $( other_modules ); do
     echo "  - ${module}" >> "${CONFIG_FILE}"
+  done
+  while grep "${REQUIRED}" "${CONFIG_FILE}" > /dev/null 2>&1; do
+    echo "Confile file still has missing values - please replace all ${REQUIRED}:"
+    echo ""
+    grep "${REQUIRED}" "${CONFIG_FILE}" 
+    echo ""
+    echo "Press enter to edit"
+    read
+    vi "${CONFIG_FILE}"
   done
 fi
 
