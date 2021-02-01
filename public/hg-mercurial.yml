@@ -57,7 +57,7 @@
     group:  "{{ target_group }}"
     mode: 0440
     backup: true
-    marker_begin: "Common elements being"
+    marker_begin: "Common elements begin"
     marker_end: "Common elements end"
     block: |
       [extensions]
