@@ -1,0 +1,2 @@
+target_git_name: "${GIT_NAME}"
+target_git_email: "${GIT_EMAIL}"

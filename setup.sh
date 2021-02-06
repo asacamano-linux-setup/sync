@@ -45,7 +45,8 @@ fi
 FORCE_DOWNLOAD=""
 FORCE_NEW_CONFIG=""
 DEBUG=""
-while getopts "dcx" OPT; do
+PLAYBOOKS=""
+while getopts "dcxp:" OPT; do
   case "${OPT}" in
     d)
       FORCE_DOWNLOAD="Y"
@@ -56,8 +57,16 @@ while getopts "dcx" OPT; do
     x)
       DEBUG="-vvv"
       ;;
+    p)
+      PLAYBOOKS="${OPTARG}"
+      ;;
     *)
-      echo "Use -d to force new downloads, or -c to force new config, or -x to debug."
+      echo "Usage: setup.sh"
+      echo "Optons:"
+      echo "  -d : force new download"
+      echo "  -c : generate new config"
+      echo "  -p <playbook> : run a specific playbook or task list"
+      echo "  -x : debug"
       exit 1
       ;;
    esac
@@ -66,49 +75,80 @@ done
 # Use configuration from this directory
 SYNC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-# Install salt if requested
+# What user is running this
+TARGET_USER="${SUDO_USER}"
+TARGET_GROUP=$( id -g -n ${TARGET_USER} )
+
+# Install ansible if requested
 ANSIBLE_CMD=$( which ansible || echo "")
 if [[ -z "${ANSIBLE_CMD}" || -n "${FORCE_DOWNLOAD}" ]]; then
   apt-get install ansible
 fi
 
-if [[ -f ${SYNC_DIR}/.secrets ]]; then
-  echo Reading secrets from ${SYNC_DIR}/.secrets
-else
-  echo "GIT_NAME=" >> ${SYNC_DIR}/.secrets
-  echo "GIT_EMAIL=" >> ${SYNC_DIR}/.secrets
-  echo "Adding secrets to ${SYNC_DIR}/.secrets. Press enter to edit."
-  read
-  vi "${SYNC_DIR}/.secrets"
+# There are secrets and config values.
+# Secrets are provied by the user once and never change unless the user does so.
+# Config values can be recomputed at will, and may depend on secrets.
+SECRETS_FILE="${SYNC_DIR}/.secrets"
+if [[ ! -f "${SECRETS_FILE}" ]]; then
+  touch "${SECRETS_FILE}"
 fi
-. ${SYNC_DIR}/.secrets
+chmod 0600 ${SECRETS_FILE}
+chown "${TARGET_USER}:${TARGET_GROUP}" "${SECRETS_FILE}"
+
+SECRET_KEYS=""
+for module in $( other_modules ); do
+  MODULE_CONFIG=modules/${module}/secrets.keys
+  if [[ -f "${MODULE_CONFIG}" ]]; then
+    SECRET_KEYS="${SECRET_KEYS} "$( cat "${MODULE_CONFIG}" | sed -e 's/#.*$//' )
+  fi
+done
+SECRET_KEYS="${SECRET_KEYS} "$( cat public/secrets.keys | sed -e 's/#.*$//' )
+SECRET_KEYS=$( echo ${SECRET_KEYS} | sed -e 's/ /\n/g' -e 's/^\s*//' -e 's/\s*$//' | grep -v '^$' )
+HAS_EMPTY_VALUE=Y
+while [[ -n "${HAS_EMPTY_VALUE}" ]]; do
+  HAS_EMPTY_VALUE=""
+  for key in ${SECRET_KEYS}; do
+    # if the key does not have a value
+    if [[ 0 == $( grep -c "^export ${key}=\"..*\"$" "${SECRETS_FILE}" ) ]]; then
+      # if the key is not present at all
+      if [[ 0 == $( grep -c "^export {key}=" "${SECRETS_FILE}" ) ]]; then
+        echo "export ${key}=\"\"" >> "${SECRETS_FILE}"
+        HAS_EMPTY_VALUE="Y"
+      else
+        # The key has an empty value
+        HAS_EMPTY_VALUE="Y"
+      fi
+    fi
+  done
+  if [[ -n "${HAS_EMPTY_VALUE}" ]]; then
+    echo "Missing values in .secrets file.  Press enter to edit."
+    read
+    vi "${SYNC_DIR}/.secrets"
+  fi
+done
+echo "Reading secrets from ${SECRETS_FILE}"
+. "${SECRETS_FILE}"
 
 # Make config
 CONFIG_FILE="${SYNC_DIR}/.config.yml"
 if [[ ! -f "${CONFIG_FILE}" || -n "${FORCE_NEW_CONFIG}" ]]; then
   backup_and_empty "${CONFIG_FILE}"
-  REQUIRED="MISSING"
   echo "---" >> "${CONFIG_FILE}"
   echo "sync_dir: \"${SYNC_DIR}\"" >> "${CONFIG_FILE}"
-  echo "target_user: \"${SUDO_USER}\"" >> "${CONFIG_FILE}"
-  TARGET_GROUP=$( id -g -n ${SUDO_USER} )
+  echo "target_user: \"${TARGET_USER}\"" >> "${CONFIG_FILE}"
   echo "target_group: \"${TARGET_GROUP}\"" >> "${CONFIG_FILE}"
-  TARGET_HOME=$( eval echo "~${SUDO_USER}" )
+  TARGET_HOME=$( eval echo "~${TARGET_USER}" )
   echo "target_home: \"${TARGET_HOME}\"" >> "${CONFIG_FILE}"
-  echo "target_git_name: \"${GIT_NAME:-$REQUIRED}\"" >> "${CONFIG_FILE}"
-  echo "target_git_email: \"${GIT_EMAIL:-$REQUIRED}\"" >> "${CONFIG_FILE}"
   echo "modules:" >> "${CONFIG_FILE}"
   for module in $( other_modules ); do
     echo "  - ${module}" >> "${CONFIG_FILE}"
   done
-  while grep "${REQUIRED}" "${CONFIG_FILE}" > /dev/null 2>&1; do
-    echo "Confile file still has missing values - please replace all ${REQUIRED}:"
-    echo ""
-    grep "${REQUIRED}" "${CONFIG_FILE}"
-    echo ""
-    echo "Press enter to edit"
-    read
-    vi "${CONFIG_FILE}"
+  cat public/config.template.yml | envsubst >> "${CONFIG_FILE}"
+  for module in $( other_modules ); do
+    MODULE_CONFIG=modules/${module}/config.template.yml
+    if [[ -f "${MODULE_CONFIG}" ]]; then
+      cat "${MODULE_CONFIG}" | envsubst >> "${CONFIG_FILE}"
+    fi
   done
 fi
 
@@ -116,7 +156,10 @@ fi
 export ANSIBLE_RETRY_FILES_ENABLED=0
 
 # Run the setup
-OTHER_PLAYBOOKS=$( other_modules | awk '{printf "modules/%s/%s.yml ",$0,$0}' | sort)
-echo "ansible-playbook -c local -i localhost, --extra-vars @${CONFIG_FILE} ${DEBUG} ${OTHER_PLAYBOOKS} public/site.yml"
-IFS=" "
-ansible-playbook -c local -i localhost, --extra-vars @"${CONFIG_FILE}" ${DEBUG} ${OTHER_PLAYBOOKS} public/site.yml
+if [[ -z "${PLAYBOOKS}" ]]; then
+  OTHER_PLAYBOOKS=$( other_modules | awk '{printf "modules/%s/%s.yml ",$0,$0}' | sort)
+  PLAYBOOKS=$(echo "${OTHER_PLAYBOOKS} public/site.yml" | sed -e 's/  */ /g' -e 's/^ *//' -e 's/ *$//')
+fi
+echo "ansible-playbook -c local -i localhost, --extra-vars @${CONFIG_FILE} ${DEBUG} ${PLAYBOOKS}"
+IFS=$' '
+ansible-playbook -c local -i localhost, --extra-vars @"${CONFIG_FILE}" ${DEBUG} ${PLAYBOOKS}
