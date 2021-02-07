@@ -32,6 +32,15 @@ other_modules() {
   ( cd ${SYNC_DIR}/modules; ls -d * ) 2>/dev/null || echo ""
 }
 
+usage() {
+  echo "Usage: setup.sh"
+  echo "Optons:"
+  echo "  -d : force new download"
+  echo "  -c : generate new config"
+  echo "  -p <playbook> : run a specific playbook or task list"
+  echo "  -x : debug"
+}
+
 # ----------------------------------------------------------------------------
 # Main
 
@@ -61,16 +70,17 @@ while getopts "dcxp:" OPT; do
       PLAYBOOKS="${OPTARG}"
       ;;
     *)
-      echo "Usage: setup.sh"
-      echo "Optons:"
-      echo "  -d : force new download"
-      echo "  -c : generate new config"
-      echo "  -p <playbook> : run a specific playbook or task list"
-      echo "  -x : debug"
+      usage
       exit 1
       ;;
    esac
 done
+
+shift $((OPTIND - 1)) 
+if [[ -n "${1:-}" ]]; then
+  usage
+  exit 1
+fi
 
 # Use configuration from this directory
 SYNC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
