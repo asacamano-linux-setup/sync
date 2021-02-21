@@ -1,5 +1,17 @@
 ---
-- name: Use VIM as the editor
-  lineinfile:
-    path: "{{ target_home }}/.bash_aliases"
-    line:  export EDITOR=vi
+- name: Setup common bash aliases
+  blockinfile:
+    create: true
+    dest: "{{ target_home }}/.bash_aliases"
+    owner:  "{{ target_user }}"
+    group:  "{{ target_group }}"
+    mode: 0440
+    backup: true
+    marker_begin: Common aliases
+    marker_end: End common aliases
+    block: |
+      export EDITOR=vi
+      # Filter the snaps out of df
+      function sdf {
+        command df $@ | grep -vE '^(overlay|shm) '
+      }
