@@ -1,4 +1,6 @@
 *~
+*.swp
+*.bak
 .config.yml*
 .secrets
 modules/
