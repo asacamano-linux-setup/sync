@@ -95,6 +95,12 @@ if [[ -z "${ANSIBLE_CMD}" || -n "${FORCE_DOWNLOAD}" ]]; then
   apt-get install ansible
 fi
 
+# Install envsubst if requested
+ENVSUBST_CMD=$( which envsubst || echo "")
+if [[ -z "${ENVSUBST_CMD}" || -n "${FORCE_DOWNLOAD}" ]]; then
+  apt-get install gettext-base
+fi
+
 # There are secrets and config values.
 # Secrets are provied by the user once and never change unless the user does so.
 # Config values can be recomputed at will, and may depend on secrets.
