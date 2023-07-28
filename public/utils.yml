@@ -13,3 +13,8 @@
   package:
     name: wmctrl
     state: present
+
+- name: Install jq
+  package:
+    name:  jq
+    state: present
