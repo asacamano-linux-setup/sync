@@ -3,4 +3,5 @@
 *.bak
 .config.yml*
 .secrets
-modules/
+./gitmodules
+/modules/*
