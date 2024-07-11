@@ -29,7 +29,9 @@ backup_and_empty() {
 }
 
 other_modules() {
-  ( cd ${SYNC_DIR}/modules; ls -d * ) 2>/dev/null || echo ""
+  if [[ -d modules ]]; then
+    ( cd ${SYNC_DIR}/modules; ls -d * ) 2>/dev/null || echo ""
+   fi
 }
 
 usage() {
@@ -86,7 +88,11 @@ fi
 SYNC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # What user is running this
-TARGET_USER="${SUDO_USER}"
+if [[ "${SUDO_USER:-}" != "" ]]; then
+  TARGET_USER="${SUDO_USER}"
+else
+  TARGET_USER="${USER}"
+fi
 TARGET_GROUP=$( id -g -n ${TARGET_USER} )
 
 # Install ansible if requested
@@ -113,9 +119,11 @@ chown "${TARGET_USER}:${TARGET_GROUP}" "${SECRETS_FILE}"
 
 SECRET_KEYS=""
 for module in $( other_modules ); do
-  MODULE_CONFIG=modules/${module}/secrets.keys
-  if [[ -f "${MODULE_CONFIG}" ]]; then
-    SECRET_KEYS="${SECRET_KEYS} "$( cat "${MODULE_CONFIG}" | sed -e 's/#.*$//' )
+  if [[ "${module}" != "" ]]; then
+    MODULE_CONFIG=modules/${module}/secrets.keys
+    if [[ -f "${MODULE_CONFIG}" ]]; then
+      SECRET_KEYS="${SECRET_KEYS} "$( cat "${MODULE_CONFIG}" | sed -e 's/#.*$//' )
+    fi
   fi
 done
 SECRET_KEYS="${SECRET_KEYS} "$( cat public/secrets.keys | sed -e 's/#.*$//' )
@@ -157,23 +165,30 @@ if [[ ! -f "${CONFIG_FILE}" || -n "${FORCE_NEW_CONFIG}" ]]; then
   echo "target_home: \"${TARGET_HOME}\"" >> "${CONFIG_FILE}"
   echo "modules:" >> "${CONFIG_FILE}"
   for module in $( other_modules ); do
-    echo "  - ${module}" >> "${CONFIG_FILE}"
+    if [[ "${module}" != "" ]]; then
+      echo "  - ${module}" >> "${CONFIG_FILE}"
+    fi
   done
   cat public/config.template.yml | envsubst >> "${CONFIG_FILE}"
   for module in $( other_modules ); do
-    MODULE_CONFIG=modules/${module}/config.template.yml
-    if [[ -f "${MODULE_CONFIG}" ]]; then
-      cat "${MODULE_CONFIG}" | envsubst >> "${CONFIG_FILE}"
+    if	 [[ "${module}" != "" ]]; then
+      MODULE_CONFIG=modules/${module}/config.template.yml
+      if [[ -f "${MODULE_CONFIG}" ]]; then
+        cat "${MODULE_CONFIG}" | envsubst >> "${CONFIG_FILE}"
+      fi
     fi
   done
 fi
 
 # Some Ansible options
 export ANSIBLE_RETRY_FILES_ENABLED=0
+if [[ "${USER}" == "userland" ]]; then
+  export ANSIBLE_BECOME_FLAGS="-H"
+fi
 
 # Run the setup
 if [[ -z "${PLAYBOOKS}" ]]; then
-  OTHER_PLAYBOOKS=$( other_modules | awk '{printf "modules/%s/%s.yml ",$0,$0}' | sort)
+  OTHER_PLAYBOOKS=$( other_modules | awk '{if ($0 != "") {printf "modules/%s/%s.yml ",$0,$0}}' | sort)
   PLAYBOOKS=$(echo "${OTHER_PLAYBOOKS} public/site.yml" | sed -e 's/  */ /g' -e 's/^ *//' -e 's/ *$//')
 fi
 echo "ansible-playbook -c local -i localhost, --extra-vars @${CONFIG_FILE} ${DEBUG} ${PLAYBOOKS}"
