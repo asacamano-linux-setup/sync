@@ -47,8 +47,12 @@ usage() {
 # Main
 
 # Run as root rather than random prompt for password
-if [ "$EUID" -ne 0 ]
-  then echo "Please run as root. Trust me, it's OK."
+# Note that this still needs to be run as root in Userland, but
+# become_user doesn't really seem to work in Userland. So tasks
+# that really need to be run as the user have to use an explicit
+# sudo call.  
+if [[ "$EUID" -ne 0 ]]; then
+  echo "Please run as root on non-Userland systems. Trust me, it's OK."
   exit
 fi
 
@@ -182,6 +186,7 @@ fi
 
 # Some Ansible options
 export ANSIBLE_RETRY_FILES_ENABLED=0
+export ANSIBLE_KEEP_REMOTE_FILES=1
 if [[ "${USER}" == "userland" ]]; then
   export ANSIBLE_BECOME_FLAGS="-H"
 fi
